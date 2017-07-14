@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { Player } from './Player';
 
 const styles = {
@@ -19,12 +20,16 @@ export class App extends React.Component {
     this.handleKeyUp = this.handleKeyUp.bind(this);
 
     this.state = {
-      top: 0,
-      left: 0,
+      playerTop: 0,
+      playerLeft: 0,
+      playerWidth: "100px",
+      playerHeight: "100px",
       keydownLeft: false,
       keydownUp: false,
       keydownRight: false,
       keydownDown: false,
+      boundsWidth: null,
+      boundsHeight: null,
     };
   }
 
@@ -38,6 +43,10 @@ export class App extends React.Component {
       () => this.inputTick(),
       10
     );
+    this.setState({
+      boundsWidth: document.getElementById('bounds').offsetWidth,
+      boundsHeight: document.getElementById('bounds').offsetHeight,
+    });
   }
 
   componentWillUnmount() {
@@ -46,18 +55,37 @@ export class App extends React.Component {
 
   inputTick() {
     const v = 10;
-    const dx = (this.state.keydownLeft && -v) + (this.state.keydownRight && v);
-    const dy = (this.state.keydownUp && -v) + (this.state.keydownDown && v);
+    const playerWidth = parseInt(this.state.playerWidth);
+    const playerHeight = parseInt(this.state.playerHeight);
+
+    let dx = (this.state.keydownLeft && -v) + (this.state.keydownRight && v);
+    let dy = (this.state.keydownUp && -v) + (this.state.keydownDown && v);
+
+    if (this.state.playerLeft + dx < 0) {
+      dx = -this.state.playerLeft;
+    } else if(this.state.playerLeft + playerWidth + dx > this.state.boundsWidth) {
+      dx = this.state.boundsWidth - this.state.playerLeft - playerWidth;
+    }
+
+    if (this.state.playerTop + dy < 0) {
+      dy = -this.state.playerTop;
+    } else if (this.state.playerTop + playerHeight + dy > this.state.boundsHeight) {
+      dy = this.state.boundsHeight - this.state.playerTop - playerHeight;
+    }
 
     this.setState({
-      left: this.state.left + dx,
-      top: this.state.top + dy,
+      playerLeft: this.state.playerLeft + dx,
+      playerTop: this.state.playerTop + dy,
     });
     //console.log('state: ' + JSON.stringify(this.state));
   }
 
   handleKeyDown(event) {
     switch (event.key) {
+      // debug case
+      case 't':
+        console.log("state: " + JSON.stringify(this.state));
+        break;
       case 'a':
         if(!this.state.keydownLeft) {
           this.setState({ keydownLeft: true });
@@ -102,8 +130,13 @@ export class App extends React.Component {
 
   render() {
     return (
-      <div style={ styles }>
-        <Player top={ this.state.top } left={ this.state.left } />
+      <div id="bounds" style={ styles }>
+        <Player
+          top={ this.state.playerTop }
+          left={ this.state.playerLeft }
+          width={ this.state.playerWidth }
+          height={ this.state.playerHeight }
+        />
       </div>
     );
   }
