@@ -1,14 +1,14 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { Player } from './Player';
 
 const styles = {
   border: '1px solid black',
   position: 'absolute',
   margin: 'auto',
-  top: 0, right: 0, bottom: 0, left: 0,
-  width: '90%',
-  height: '80%',
+  top: 0, bottom: 0,
+  right: 0, left: 0,
+  width: '100%',
+  height: '100%',
 };
 
 export class App extends React.Component {
@@ -49,35 +49,49 @@ export class App extends React.Component {
     });
   }
 
+  componentDidUpdate() {
+    // setState here would cause infinite regression
+    this.state.boundsWidth = document.getElementById('bounds').offsetWidth;
+    this.state.boundsHeight = document.getElementById('bounds').offsetHeight;
+  }
+
   componentWillUnmount() {
     clearInterval(this.timerID);
   }
 
   inputTick() {
-    const v = 10;
+    const velocity = 10;
+    // Relies on this binding in constructor for inputTick
+    const movement = this.calculateMovement(velocity);
+
+    this.setState({
+      playerLeft: this.state.playerLeft + movement.dx,
+      playerTop: this.state.playerTop + movement.dy,
+    });
+  }
+
+  calculateMovement(v) {
+    // Get player dimensions
     const playerWidth = parseInt(this.state.playerWidth);
     const playerHeight = parseInt(this.state.playerHeight);
 
+    // Find movement for this tick
     let dx = (this.state.keydownLeft && -v) + (this.state.keydownRight && v);
     let dy = (this.state.keydownUp && -v) + (this.state.keydownDown && v);
 
+    // Check left and right bounds
     if (this.state.playerLeft + dx < 0) {
       dx = -this.state.playerLeft;
     } else if(this.state.playerLeft + playerWidth + dx > this.state.boundsWidth) {
       dx = this.state.boundsWidth - this.state.playerLeft - playerWidth;
     }
-
+    // Check top and bottom bounds
     if (this.state.playerTop + dy < 0) {
       dy = -this.state.playerTop;
     } else if (this.state.playerTop + playerHeight + dy > this.state.boundsHeight) {
       dy = this.state.boundsHeight - this.state.playerTop - playerHeight;
     }
-
-    this.setState({
-      playerLeft: this.state.playerLeft + dx,
-      playerTop: this.state.playerTop + dy,
-    });
-    //console.log('state: ' + JSON.stringify(this.state));
+    return { dx: dx, dy: dy };
   }
 
   handleKeyDown(event) {
